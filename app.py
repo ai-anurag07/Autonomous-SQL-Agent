@@ -22,19 +22,32 @@ if not GROQ_API_KEY:
     st.stop()
 os.environ["GROQ_API_KEY"] = GROQ_API_KEY
 
-# --- AUTO-BUILD DATABASE FOR CLOUD DEPLOYMENT ---
-if not os.path.exists("olist.db") or not os.path.exists("chroma_db"):
-    with st.spinner("⚙️ Building Database & Vector Store for the first time (Takes ~60 seconds)..."):
+# --- 🛠️ REBUILD LOGIC (MUST BE AT THE VERY TOP BEFORE CHROMA LOCKS FILES) ---
+if st.session_state.get("trigger_rebuild"):
+    with st.spinner("Nuking and rebuilding database from zip files..."):
+        if os.path.exists("olist.db"):
+            os.remove("olist.db")
+        if os.path.exists("chroma_db"):
+            shutil.rmtree("chroma_db")
         import setup_db
         setup_db.build_sqlite_db()
         setup_db.build_metadata_rag()
-        st.success("Database built successfully! Refreshing...")
+        
+        # Turn off the trigger and restart the app
+        st.session_state.trigger_rebuild = False
+        st.success("✅ Database fully rebuilt! Refreshing...")
         st.rerun()
+
+# --- AUTO-BUILD DATABASE FOR CLOUD DEPLOYMENT ---
+if not os.path.exists("olist.db") or not os.path.exists("chroma_db"):
+    st.session_state.trigger_rebuild = True
+    st.rerun()
 
 # --- INITIALIZE AI ---
 llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 vectorstore = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
+
 
 class AgentState(TypedDict):
     question: str
@@ -162,18 +175,20 @@ with st.sidebar:
         st.rerun()
         
     st.divider()
-    # If the database breaks in the cloud, this button nukes it and triggers the auto-build script above
+    # This button flips the switch and tells the top of the script to rebuild
     if st.button("⚠️ Force Rebuild Database"):
-        with st.spinner("Nuking and rebuilding database from zip files..."):
-            if os.path.exists("olist.db"):
-                os.remove("olist.db")
-            if os.path.exists("chroma_db"):
-                shutil.rmtree("chroma_db")
-            import setup_db
-            setup_db.build_sqlite_db()
-            setup_db.build_metadata_rag()
-            st.success("✅ Database fully rebuilt! Refreshing...")
-            st.rerun()
+        st.session_state.trigger_rebuild = True
+        st.rerun()
+        # with st.spinner("Nuking and rebuilding database from zip files..."):
+        #     if os.path.exists("olist.db"):
+        #         os.remove("olist.db")
+        #     if os.path.exists("chroma_db"):
+        #         shutil.rmtree("chroma_db")
+        #     import setup_db
+        #     setup_db.build_sqlite_db()
+        #     setup_db.build_metadata_rag()
+        #     st.success("✅ Database fully rebuilt! Refreshing...")
+        #     st.rerun()
 
 # --- MAIN UI ---
 st.title("🤖 Autonomous Business Intelligence Agent")
