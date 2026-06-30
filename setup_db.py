@@ -119,7 +119,8 @@ OLIST_METADATA = {
 def build_sqlite_db():
     print("Building SQLite Database...")
     conn = sqlite3.connect(DB_PATH)
-    csv_files = glob.glob("data/*.csv")
+    # This will find the CSVs even if they are nested inside data/data/
+    csv_files = glob.glob("data/**/*.csv", recursive=True)
     
     for file in csv_files:
         table_name = os.path.basename(file).replace(".csv", "").replace("olist_", "").replace("_dataset", "")
@@ -139,8 +140,11 @@ def build_sqlite_db():
         "CREATE INDEX IF NOT EXISTS idx_order_reviews_order ON order_reviews(order_id);"
     ]
     for idx in indexes:
-        cursor.execute(idx)
-        
+        try:
+            cursor.execute(idx)
+        except sqlite3.OperationalError as e:
+            print(f"Skipping index: {e}") # Ignores the error if a table is missing
+            
     conn.commit()
     conn.close()
     print("Database built and indexed successfully!")
