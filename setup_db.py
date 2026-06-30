@@ -4,6 +4,7 @@ import os
 import glob
 from langchain_community.vectorstores import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
+import zipfile
 
 DB_PATH = "olist.db"
 CHROMA_PATH = "chroma_db"
@@ -165,9 +166,17 @@ def build_metadata_rag():
     )
     print("Metadata RAG ready!")
 
+
+
 if __name__ == "__main__":
+    # --- AUTO-UNZIP LOGIC ---
+    if not os.path.exists("data") and os.path.exists("data.zip"):
+        print("Extracting data.zip...")
+        with zipfile.ZipFile("data.zip", 'r') as zip_ref:
+            zip_ref.extractall(".") # Extracts the 'data' folder into the current directory
+            
     if not os.path.exists("data") or not glob.glob("data/*.csv"):
-        print("Please ensure the 'data' folder exists and contains the Olist CSVs.")
+        print("Please ensure the 'data' folder exists or upload 'data.zip'.")
     else:
         build_sqlite_db()
         build_metadata_rag()

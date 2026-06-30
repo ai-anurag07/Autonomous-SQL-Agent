@@ -11,7 +11,14 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-
+# --- AUTO-BUILD DATABASE FOR CLOUD DEPLOYMENT ---
+if not os.path.exists("olist.db") or not os.path.exists("chroma_db"):
+    with st.spinner("⚙️ Building Database & Vector Store for the first time (Takes ~60 seconds)..."):
+        import setup_db
+        setup_db.build_sqlite_db()
+        setup_db.build_metadata_rag()
+        st.success("Database built successfully! Refreshing...")
+        st.rerun()
 st.set_page_config(page_title="Autonomous SQL Agent", layout="wide", page_icon="🤖")
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
