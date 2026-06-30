@@ -169,14 +169,19 @@ def build_metadata_rag():
 
 
 if __name__ == "__main__":
-    # --- AUTO-UNZIP LOGIC ---
-    if not os.path.exists("data") and os.path.exists("data.zip"):
-        print("Extracting data.zip...")
-        with zipfile.ZipFile("data.zip", 'r') as zip_ref:
-            zip_ref.extractall(".") # Extracts the 'data' folder into the current directory
+    # --- AUTO-UNZIP LOGIC FOR MULTIPLE ZIPS ---
+    if not os.path.exists("data"):
+        os.makedirs("data") # Create the data folder if it doesn't exist
+
+    # Extract both zip files directly into the data folder
+    for zip_name in ["data1.zip", "data2.zip"]:
+        if os.path.exists(zip_name):
+            print(f"Extracting {zip_name}...")
+            with zipfile.ZipFile(zip_name, 'r') as zip_ref:
+                zip_ref.extractall("data")
             
-    if not os.path.exists("data") or not glob.glob("data/*.csv"):
-        print("Please ensure the 'data' folder exists or upload 'data.zip'.")
+    if not glob.glob("data/*.csv"):
+        print("Please ensure the CSV files are uploaded.")
     else:
         build_sqlite_db()
         build_metadata_rag()
