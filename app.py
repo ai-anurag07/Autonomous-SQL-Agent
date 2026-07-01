@@ -22,20 +22,23 @@ if not GROQ_API_KEY:
     st.stop()
 os.environ["GROQ_API_KEY"] = GROQ_API_KEY
 
-# --- 🛠️ REBUILD LOGIC (MUST BE AT THE VERY TOP BEFORE CHROMA LOCKS FILES) ---
+# --- 🛠️ SAFE REBUILD LOGIC ---
 if st.session_state.get("trigger_rebuild"):
-    with st.spinner("Nuking and rebuilding database from zip files..."):
+    with st.spinner("Building database from zip files..."):
+        # Safely delete SQLite, but DO NOT delete Chroma (Prevents Rust memory panics)
         if os.path.exists("olist.db"):
             os.remove("olist.db")
-        if os.path.exists("chroma_db"):
-            shutil.rmtree("chroma_db")
+            
         import setup_db
         setup_db.build_sqlite_db()
-        setup_db.build_metadata_rag()
         
+        # Only build Chroma if it doesn't exist yet
+        if not os.path.exists("chroma_db"):
+            setup_db.build_metadata_rag()
+            
         # Turn off the trigger and restart the app
         st.session_state.trigger_rebuild = False
-        st.success("✅ Database fully rebuilt! Refreshing...")
+        st.success("✅ Database fully built! Refreshing...")
         st.rerun()
 
 # --- AUTO-BUILD DATABASE FOR CLOUD DEPLOYMENT ---
