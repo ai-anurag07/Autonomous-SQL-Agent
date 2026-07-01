@@ -117,19 +117,31 @@ OLIST_METADATA = {
 }
 
 def build_sqlite_db():
+    print("Extracting zips if needed...")
+    if not os.path.exists("data"):
+        os.makedirs("data")
+        
+    # Unzip directly inside the function so it runs when imported!
+    for zip_name in ["data1.zip", "data2.zip"]:
+        if os.path.exists(zip_name):
+            print(f"Extracting {zip_name}...")
+            with zipfile.ZipFile(zip_name, 'r') as zip_ref:
+                zip_ref.extractall("data")
+
     print("Building SQLite Database...")
     conn = sqlite3.connect(DB_PATH)
-    # This will find the CSVs even if they are nested inside data/data/
+    
+    # Recursively find CSVs no matter how they unzipped
     csv_files = glob.glob("data/**/*.csv", recursive=True)
     
     for file in csv_files:
+        # Clean the file name so 'olist_orders_dataset.csv' becomes 'orders'
         table_name = os.path.basename(file).replace(".csv", "").replace("olist_", "").replace("_dataset", "")
         if table_name in OLIST_METADATA:
             df = pd.read_csv(file)
             df.to_sql(table_name, conn, if_exists='replace', index=False)
             print(f"Loaded {table_name}")
             
-    # --- 🚀 NEW OPTIMIZATION: CREATE INDEXES FOR SPEED ---
     print("Creating Database Indexes to optimize JOINs...")
     cursor = conn.cursor()
     indexes = [
@@ -148,6 +160,7 @@ def build_sqlite_db():
     conn.commit()
     conn.close()
     print("Database built and indexed successfully!")
+
 
 def build_metadata_rag():
     print("Building Semantic Metadata RAG...")
