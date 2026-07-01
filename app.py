@@ -192,6 +192,15 @@ with st.sidebar:
         #     setup_db.build_metadata_rag()
         #     st.success("✅ Database fully rebuilt! Refreshing...")
         #     st.rerun()
+    st.divider()
+    st.subheader("🛠️ Cloud Diagnostics")
+    if os.path.exists("olist.db"):
+        conn = sqlite3.connect("file:olist.db?mode=ro", uri=True)
+        tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()
+        st.write("**Tables currently in Database:**")
+        for t in tables:
+            st.write(f"- {t[0]}")
+        conn.close()
 
 # --- MAIN UI ---
 st.title("🤖 Autonomous Business Intelligence Agent")
