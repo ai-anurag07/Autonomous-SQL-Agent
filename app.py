@@ -90,6 +90,8 @@ def generate_sql(state: AgentState):
                    "4. If asked for an overall metric (e.g. 'average across all'), return ONE aggregate row. Do NOT use GROUP BY. "
                    "5. Date math must use: julianday(date1) - julianday(date2). "
                    "6. Always use LIMIT 50. "
+                   "7. The 'orders' table does NOT have a 'seller_id'. To connect sellers to orders, you MUST join 'sellers' directly to 'order_items' on 'seller_id'. "
+                   "8. For city or state filters, use 'customer_city'/'seller_city' directly from the customers/sellers tables. Do NOT use the geolocation table unless specifically asked for latitude/longitude. "
                    "If you receive a previous error, FIX your SQL based on the traceback.\n\n"
                    "Relevant Schemas:\n{schema_context}\n\n"
                    "Chat History:\n{chat_history}\n\n"
